@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "resource-list-builder",
+  "version": "0.1.0",
+  "description": "Build, maintain, and analyse curated GitHub resource lists (Awesome-style). AI-driven categorisation of dropped repo URLs into standardised tables with dynamic shields.io badges.",
+  "author": {
+    "name": "Daniel Rosehill",
+    "email": "public@danielrosehill.com",
+    "url": "https://danielrosehill.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "awesome-list",
+    "resource-list",
+    "github",
+    "curation",
+    "indexing"
+  ]
+}
