@@ -21,15 +21,15 @@ Everything below is the default — only deviate if the user explicitly asks.
 - Filename: `README.md` at repo root.
 - Awesome badge at the top.
 - Short scope block: **In Scope** / **Out Of Scope** bullets.
-- Optional **Discovery sources** block (GitHub topic pages, awesome lists scraped, etc.) when the user provided them.
+- **Sources Used** block when the user supplied GitHub topic URLs or other discovery sources. Placement: **1–3 sources** render inline near the top, immediately under the scope block. **4+ sources** render in a `## Sources Used` section at the bottom (just above List Authorship) so they don't crowd out the recommendations.
 - **Contents** TOC linking to each section.
 - **Sections in alphabetical order.** Within each section, **rows alphabetical by display name.**
-- Each section is a 3-column table:
+- Each section is a 4-column table — **Stars and Last Updated are mandatory**, never dropped:
 
   ```markdown
-  | Project | Description | Stars |
-  |---|---|---|
-  | [Display Name](https://github.com/OWNER/REPO) | One-sentence description (≤22 words). | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) |
+  | Project | Description | Stars | Last Updated |
+  |---|---|---|---|
+  | [Display Name](https://github.com/OWNER/REPO) | One-sentence description (≤22 words). | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) | ![](https://img.shields.io/github/last-commit/OWNER/REPO) |
   ```
 
 - Display name = human-readable (`DeepEval`, not `deepeval`). Description from `gh repo view OWNER/REPO --json description -q .description`, trimmed to ≤22 words. No marketing tone.
@@ -39,7 +39,7 @@ Everything below is the default — only deviate if the user explicitly asks.
 
 1. **Resolve repo path.** Default to `~/repos/github/my-repos/<RepoName>` (Daniel's convention). Honour `RESOURCE_LIST_PUBLIC_BASE` env var if set.
 2. **Resolve template.** If `RESOURCE_LIST_TEMPLATE_PATH` is set and points to a readable file, use it as the base instead of the built-in template below; still apply alphabetical ordering.
-3. **Fetch metadata** for every supplied URL in parallel: `gh repo view OWNER/REPO --json description,stargazerCount` (Bash, batched). Skip dead/missing repos and report them.
+3. **Fetch metadata** for every supplied URL in parallel: `gh repo view OWNER/REPO --json description,stargazerCount,pushedAt` (Bash, batched). Skip dead/missing repos and report them. (Stars and last-updated are mandatory columns; both badges render off `OWNER/REPO`, so the live values come from shields.io — but capture `pushedAt` and `stargazerCount` for the release-resource-list CSV export.)
 4. **Categorise.** If the user gave sections, use them verbatim. Otherwise propose a section list (alphabetical) covering the entries, and confirm with the user only if the entries span clearly different sub-domains. If the user dropped a flat list and asked for help organising, do the categorisation work — that is the value-add of this skill.
 5. **Write README.md** using the shape above. Alphabetise sections. Alphabetise rows within each section.
 6. **Initial commit + create GitHub repo.**
@@ -67,9 +67,9 @@ Everything below is the default — only deviate if the user explicitly asks.
 ### Out Of Scope
 - ...
 
-## Discovery sources
-
-<Optional — bullet list of GitHub topic pages, awesome lists, or other origin URLs.>
+{If 1–3 GitHub topic URLs / discovery sources were supplied, render here as a single line:
+**Sources Used:** [topic-slug](https://github.com/topics/topic-slug) · [topic-slug](https://github.com/topics/topic-slug)
+If 4+ sources, omit here and render the `## Sources Used` section near the bottom instead (template at end of this file).}
 
 ---
 
@@ -82,14 +82,25 @@ Everything below is the default — only deviate if the user explicitly asks.
 
 ## <Section A>
 
-| Project | Description | Stars |
-|---|---|---|
-| [Project Name](https://github.com/OWNER/REPO) | Description ≤22 words. | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) |
+| Project | Description | Stars | Last Updated |
+|---|---|---|---|
+| [Project Name](https://github.com/OWNER/REPO) | Description ≤22 words. | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) | ![](https://img.shields.io/github/last-commit/OWNER/REPO) |
 
 ## <Section B>
 
-| Project | Description | Stars |
-|---|---|---|
+| Project | Description | Stars | Last Updated |
+|---|---|---|---|
+
+---
+
+{If 4+ GitHub topic URLs were supplied as sources, render the section below; otherwise omit.}
+
+## Sources Used
+
+This list was assembled by surveying the following GitHub topic pages and awesome lists:
+
+- [<topic-slug>](https://github.com/topics/<topic-slug>)
+- ...
 
 ---
 

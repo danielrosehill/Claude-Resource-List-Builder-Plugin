@@ -13,19 +13,21 @@ Add new entries to an existing resource list with AI-driven categorisation.
 2. **Read the current README** to learn the section scheme, table format, and existing entries (for dedup).
 3. **For each new URL** (in parallel via Bash):
    - Skip if `OWNER/REPO` already appears anywhere in the README — note it as a duplicate.
-   - `gh repo view OWNER/REPO --json description,stargazerCount,topics -q '{d:.description,s:.stargazerCount,t:.topics}'`
+   - `gh repo view OWNER/REPO --json description,stargazerCount,pushedAt,topics -q '{d:.description,s:.stargazerCount,p:.pushedAt,t:.topics}'`
    - If the repo is dead/missing, flag it and skip.
 4. **Categorise** each entry into one of the existing sections.
    - Use repo topics + description to pick the best fit.
    - If an entry doesn't fit any existing section, propose either (a) placing it in the closest section, or (b) creating a new section. Show the user the proposal before adding a brand-new section.
    - This is the value-add: when the user dumps a flat list, do the sifting work.
-5. **Insert rows** in the correct table, preserving alphabetical order by display name within the section. Use the standard row format:
+5. **Insert rows** in the correct table, preserving alphabetical order by display name within the section. Use the standard 4-column row format (Stars and Last Updated are mandatory):
 
    ```markdown
-   | [Display Name](https://github.com/OWNER/REPO) | One-sentence description (≤22 words). | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) |
+   | [Display Name](https://github.com/OWNER/REPO) | One-sentence description (≤22 words). | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) | ![](https://img.shields.io/github/last-commit/OWNER/REPO) |
    ```
 
    Display name = human-readable, not the raw repo slug. Description trimmed to ≤22 words.
+
+   If the existing list is still on the legacy 3-column shape (no Last Updated column), upgrade the whole table in this same edit — add the column header, separator, and a last-commit badge for every existing row. Mention the upgrade in the report.
 6. **Update the Contents TOC** if any new section was added (re-alphabetise it).
 7. **Commit and push.**
    - `git add -A && git commit -m "Add: <comma-separated short list>"`
@@ -41,4 +43,4 @@ If the user pre-labels entries (`X goes under Y`), respect that without re-class
 - **Entry belongs in two sections** — pick the most specific one. Mention the alternative in the report.
 - **Section explosion** — if you'd add >2 new sections from one batch, stop and ask the user whether to expand the section scheme or fit entries into existing buckets.
 - **Description has a ≤22-word hard limit** — truncate at a sentence boundary and end with a period; do not append "...".
-- **Non-GitHub entries** — render the stars cell as `—`.
+- **Non-GitHub entries** — render the Stars and Last Updated cells as `—`.
