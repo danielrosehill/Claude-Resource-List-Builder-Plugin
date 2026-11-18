@@ -1,49 +1,21 @@
 ---
 name: analyze-resource-list
-description: Use when the user wants quality/health analysis of an existing resource list — flag stale repos, low-star entries, dead links, or surface what's worth pruning. Triggers — "audit the <topic> list", "find stale entries in...", "filter out repos under N stars that haven't been updated", "what should I cut from this list".
+description: Audit a resource list for dead, archived, stale, low-traction or description-drifted entries across GitHub repos and Hugging Face models/datasets/Spaces, then optionally prune. Triggers: "audit the <topic> list", "find stale entries", "what should I cut".
 ---
 
 # Analyze Resource List
 
-Run a health/quality pass over an existing resource list. Read-only by default — only mutates the list if the user approves a pruning plan.
+Read `${CLAUDE_PLUGIN_ROOT}/reference/entries.md` first. Read-only unless the user approves a prune.
 
-## Default thresholds (override per request)
+Thresholds (override per request): low traction < 50 stars (GitHub) or < 100 downloads and < 5 likes (HF); stale > 18 months.
 
-- **Low stars:** < 50
-- **Stale:** no commit in > 18 months
-- **Dead:** repo 404s, archived, or moved without redirect
+1. Extract every link from the README (both formats) and classify it.
+2. Fetch in parallel:
+   - GitHub: `gh repo view OWNER/REPO --json stargazerCount,pushedAt,isArchived,isFork,description`; 404 = dead.
+   - HF: `curl -s -w '\n%{http_code}' https://huggingface.co/api/<models|datasets|spaces>/<id>`; HTTP 404 (or body with an `error` key) = dead; use `lastModified` for staleness, `downloads`/`likes` for traction, `disabled`/`private` flags as gated.
+   - Web links: `curl -sIL -o /dev/null -w '%{http_code}'`; 4xx/5xx = suspect (some sites block bots, say so).
+3. Bucket: dead, stale, low-traction, forks, description-drift, healthy. Do not apply the low-traction bucket when the list's profile has `show_stars: false` unless the user asks; staleness and dead checks always run.
+4. Report a table worst-first (section, entry, source, traction, last activity, flags). Write it to `outputs/<list>-audit-<date>.md` only if asked.
+5. Offer a prune plan; mutate only on explicit approval (drop rows/cards, update TOC, commit `Audit prune: <n>`, push).
 
-## Procedure
-
-1. **Read the README** and extract every `OWNER/REPO` link.
-2. **Fetch metadata in parallel** for each entry:
-
-   ```bash
-   gh repo view OWNER/REPO --json stargazerCount,pushedAt,isArchived,description -q '{s:.stargazerCount,p:.pushedAt,a:.isArchived,d:.description}'
-   ```
-
-   For 404s, mark dead.
-3. **Bucket the entries:**
-   - `dead` — 404, moved, or archived with no successor.
-   - `stale` — last push older than the staleness threshold.
-   - `low-star` — below the star threshold AND not flagged as a niche/early-stage exception by the user.
-   - `description-drift` — current GitHub description differs significantly from what the README says.
-   - `healthy` — passes all checks.
-4. **Render a report** as a markdown table sorted worst-first. Include section, project, stars, last push, flag(s).
-5. **Optionally write the report** to `outputs/<list-name>-audit-<YYYY-MM-DD>.md` in the list repo if the user wants it kept.
-6. **Offer a pruning plan** — list of removals + section renames the user could apply. Wait for explicit approval before mutating the README.
-7. **If approved, execute the prune** — drop rows, update Contents TOC, commit:
-   - `git add -A && git commit -m "Audit prune: <N removed, N updated>"`
-   - `git push`
-
-## What this skill does NOT do
-
-- Doesn't auto-remove anything without confirmation.
-- Doesn't refetch descriptions to overwrite the README — that's a deliberate `update-resource-list` decision.
-- Doesn't judge "quality" beyond the mechanical stars/staleness/archive signals. A 12-star repo from a known author may be exactly what the user wants to keep.
-
-## Edge cases
-
-- **Rate limits** — if `gh` starts throttling, switch to sequential fetches with a small sleep, or batch via `gh api graphql`.
-- **Forks** — flag forks as a separate bucket; some lists deliberately link to canonical sources, others to active forks.
-- **Mirrors / moved repos** — surface the new location and let the user decide.
+Never auto-remove; a niche low-star entry may be wanted. Rate limits: go sequential or use `gh api graphql`. Moved repos: surface the new location.

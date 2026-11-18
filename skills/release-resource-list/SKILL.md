@@ -1,9 +1,11 @@
 ---
 name: release-resource-list
-description: Use when the user wants to cut a release of a resource list — a dated CSV snapshot of every entry with current star counts and last-pushed dates, plus a GitHub Release. Triggers — "release the <list>", "snapshot the <list>", "tag a release of <list>", "export the list as CSV", "freeze the current state of <list>". Works on any list scaffolded by `new-resource-list` / `new-private-resource-list` (Project|Description|Stars|Last Updated table shape).
+description: Use when the user wants to cut a release of a resource list — a dated CSV snapshot of every entry with current star counts and last-pushed dates, plus a GitHub Release. Triggers — "release the <list>", "snapshot the <list>", "tag a release of <list>", "export the list as CSV", "freeze the current state of <list>". Works on any list in either entry format (table or cards), with GitHub, Hugging Face and web entries.
 ---
 
 # Release Resource List
+
+Read `${CLAUDE_PLUGIN_ROOT}/reference/entries.md` first (profile, URL classes, HF metadata).
 
 Cut a dated, machine-readable snapshot of a resource list and publish it as a GitHub Release. The CSV is the canonical artefact — readers/agents downstream consume it instead of scraping the README.
 
@@ -15,7 +17,7 @@ Cut a dated, machine-readable snapshot of a resource list and publish it as a Gi
 
 ## Inputs to gather
 
-1. **Target list** — repo path or name. Default search root: `~/repos/github/my-repos/`. Confirm before running if ambiguous.
+1. **Target list** — repo path or name. Search `base_dir` / `private_base_dir` from the profile. Confirm if ambiguous.
 2. **Release tag** — default `release-YYYY-MM-DD` (today's date). Honour user-supplied semver (`v1.2.0`) if given.
 3. **Release notes** — auto-generated summary by default (entry count, sections, deltas vs. previous release if one exists). User can override.
 
@@ -25,14 +27,20 @@ Cut a dated, machine-readable snapshot of a resource list and publish it as a Gi
 
 - Read the README of the target list.
 - Extract every row from every section table. Each row yields: `section`, `display_name`, `owner/repo`, `description`, `url`.
-- Skip non-GitHub rows (where the badge cells were rendered as `—`) but include them in the CSV with empty star/last-updated fields and a `host` column noting the platform.
+- Handle both formats: table rows, or card headings with their description and link. Classify each link as `source=github|hf|web`; HF entries also carry `kind=model|dataset|space`. Web entries go into the CSV with empty metrics.
 
 ### 2. Re-fetch live metadata in parallel
 
-For every `OWNER/REPO`:
+GitHub entries:
 
 ```bash
 gh api repos/OWNER/REPO --jq '{stars:.stargazers_count, last_pushed:.pushed_at, archived:.archived, language:.language, license:.license.spdx_id, homepage:.homepage, topics:.topics}'
+```
+
+Hugging Face entries (`models|datasets|spaces`):
+
+```bash
+curl -s https://huggingface.co/api/models/<id> | jq '{downloads, likes, last_modified:.lastModified, task:.pipeline_tag, license:(.cardData.license // null), tags}'
 ```
 
 Batch in parallel. Cache the JSON. Flag any repo that 404s (deleted/renamed) — include it in the CSV with `status=missing` and surface it in the report.
@@ -44,12 +52,13 @@ Path: `releases/<tag>/entries.csv` inside the resource-list repo.
 Required columns (in this order):
 
 ```
-section,display_name,owner_repo,url,description,stars,last_pushed,archived,language,license,topics,homepage,status
+section,display_name,source,kind,id,url,description,stars,downloads,likes,last_pushed,archived,language,task,license,topics,homepage,status
 ```
 
-- `last_pushed` — ISO-8601 (`2026-04-25T12:34:56Z`).
+- `source` is `github`, `hf` or `web`; `kind` is `repo`, `model`, `dataset`, `space` or `link`; `id` is OWNER/REPO or the HF id. `stars` is GitHub only; `downloads`/`likes` are HF only (Spaces have no downloads). `task` is the HF `pipeline_tag`.
+- `last_pushed` (GitHub `pushed_at`, HF `lastModified`) — ISO-8601 (`2026-04-25T12:34:56Z`).
 - `topics` — semicolon-separated.
-- `status` — `ok`, `archived`, `missing`, or `non-github`.
+- `status` — `ok`, `archived`, `missing`, or `web`.
 - Rows alphabetised first by `section`, then by `display_name`. Headers exactly as above.
 - Use proper CSV quoting (RFC 4180): wrap any field containing comma, quote, or newline in double quotes; escape internal quotes by doubling.
 
@@ -59,7 +68,7 @@ Also write `releases/<tag>/manifest.json` alongside it:
 {
   "tag": "release-2026-04-25",
   "generated_at": "2026-04-25T12:34:56Z",
-  "list_repo": "danielrosehill/<RepoName>",
+  "list_repo": "<owner>/<RepoName>",
   "entry_count": 87,
   "sections": ["Section A", "Section B", "..."],
   "csv": "entries.csv"
@@ -91,7 +100,7 @@ git push && git push --tags
 gh release create <tag> \
   releases/<tag>/entries.csv \
   releases/<tag>/manifest.json \
-  --title "<RepoName> — <tag>" \
+  --title "<RepoName> - <tag>" \
   --notes-file releases/<tag>/CHANGES.md
 ```
 
@@ -101,7 +110,7 @@ If no `CHANGES.md` exists (first release), generate notes inline:
 gh release create <tag> \
   releases/<tag>/entries.csv \
   releases/<tag>/manifest.json \
-  --title "<RepoName> — <tag>" \
+  --title "<RepoName> - <tag>" \
   --notes "First release. <entry_count> entries across <section_count> sections."
 ```
 

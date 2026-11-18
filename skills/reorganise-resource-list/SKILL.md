@@ -1,40 +1,16 @@
 ---
 name: reorganise-resource-list
-description: Use when the user wants an existing resource list re-categorised — sections renamed/merged/split, entries re-bucketed, or the whole table re-alphabetised. Triggers — "reorganise the <topic> list", "the sections on this list have grown messy", "split <section> into two", "re-bucket these entries". Non-destructive — proposes the reshape first.
+description: Re-categorise an existing resource list: rename, merge or split sections, move entries, re-alphabetise, add missing section descriptions, or convert between table and cards. Triggers: "reorganise the <topic> list", "split <section>", "the sections got messy", "convert this list to cards".
 ---
 
 # Reorganise Resource List
 
-Restructure an existing resource list — section scheme, ordering, or both. Always propose changes before writing.
+Read `${CLAUDE_PLUGIN_ROOT}/reference/entries.md` first.
 
-## Procedure
+1. Read the README; detect its format (table or cards) and whether entries are GitHub, HF or web.
+2. Diagnose: sections with 1-2 entries (merge), more than 20 (split), mis-bucketed entries, out-of-order sections or rows, duplicates, sections without descriptions when `section_descriptions` is true.
+3. Propose a short plan (renames, splits, merges, moves, format conversion). Pure alphabetisation and adding missing descriptions can be applied without proposal. Wait for approval otherwise.
+4. Rewrite the README: sections alphabetical, rows alphabetical, TOC updated, descriptions present, same format (or the converted one, with columns/badges following `show_stars` and `show_last_updated`; refetch metadata only when converting needs it, e.g. HF badges are URL-only so none is needed).
+5. Commit `Reorganise: <summary>` and push. Report what moved.
 
-1. **Read the target README.** Inventory current sections and entries.
-2. **Diagnose.** Look for:
-   - Sections with one or two entries (candidates for merge).
-   - A single section with >20 entries (candidate for split).
-   - Mis-bucketed entries (description/topics don't match the section).
-   - Sections out of alphabetical order.
-   - Duplicate entries across sections.
-3. **Propose a plan** to the user as a short diff:
-   - Renames: `Old → New`
-   - Splits: `Big Section → [Sub A, Sub B]` with which entries land where.
-   - Merges: `[X, Y] → Combined`
-   - Moves: list each entry → new section.
-   - Pure alphabetisation runs (no scheme change) can be applied without proposal.
-4. **Wait for approval.** If the user says "go" or names specific changes from the plan, execute. Otherwise iterate on the plan.
-5. **Execute the reshape.** Rewrite the README with:
-   - **Sections in alphabetical order.**
-   - **Rows alphabetical by display name within each section.**
-   - Updated Contents TOC.
-   - Same Project|Description|Stars table format. Don't refetch metadata unless the user asks.
-6. **Commit and push.**
-   - `git add -A && git commit -m "Reorganise: <short summary>"`
-   - `git push`
-7. **Report.** What moved, what merged, what was renamed.
-
-## Edge cases
-
-- **Star-count or activity-based reshape** — not this skill's job; that's `analyze-resource-list`. Suggest the user run that first if their goal is pruning.
-- **User wants a totally new section scheme** — fine, but ask them to either name the new sections or hand over a topic list. Don't invent a scheme silently.
-- **Cross-list reshape** (move entries from list A to list B) — handle as two operations: remove from A (commit), then `update-resource-list` to add to B.
+Pruning by stars/staleness belongs to `analyze-resource-list`; moving entries between lists is remove (commit) then `update-resource-list`.

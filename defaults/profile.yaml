@@ -1,0 +1,36 @@
+# resource-list-builder: built-in defaults. Documents every profile key.
+# Copy to <data dir>/profile.yaml (run the `setup` skill) and edit. Overlay keys win; missing keys fall back to these.
+
+author:
+  name: ""                 # shown in the Contributing / authorship block; empty = omit
+  url: ""
+github_owner: ""           # owner for `gh repo create`; empty = `gh api user --jq .login`
+contribution_line: "Contributions and corrections are welcome: open a pull request or an issue."
+license:
+  id: "CC0-1.0"
+  badge: "[![CC0](https://licensebuttons.net/p/zero/1.0/88x31.png)](https://creativecommons.org/publicdomain/zero/1.0/)"
+default_visibility: public # public | private
+private_footer: false       # true = private lists skip the contribution/licence footer
+base_dir: "~/lists"         # where new list repos are cloned
+private_base_dir: null      # separate dir for private lists; null = base_dir
+top_badge: ""               # optional markdown line placed above the title (e.g. a "master index" badge)
+scope_file: true            # create SCOPE.md and link it from the README
+section_descriptions: true  # write a 1-2 sentence description under each section heading
+show_stars: true            # table: Stars / Downloads+Likes columns; cards: stat badges. false = omit
+show_last_updated: true     # table: Last Updated column (and cards: last-commit badge). false = omit
+formats:
+  third_party: table        # table | cards, lists of other people's projects
+  own_repos: cards          # table | cards, indexes of the user's own repos
+index_of_indexes:           # optional: one repo that lists every index/list you create
+  repo: ""                  # OWNER/REPO, empty = disabled
+  local_path: ""
+  entry_format: cards       # how a row/card is added there: cards | table
+  register: true            # new-resource-list adds an entry and links back near the top of the new list
+  back_link_line: "Part of the [{name}](https://github.com/{repo}) index of indexes."
+hubs: []                    # optional parent hubs a new list can belong to
+  # - name: "Example Hub"
+  #   local_path: "~/lists/Example-Hub"
+  #   repo: "OWNER/Example-Hub"
+  #   section: "Sub-indexes"          # heading holding the sub-index table
+  #   row_format: "| [{name}]({url}) | {summary} |"   # how a row is added
+naming: "Title-Case words joined by hyphens"  # repo naming convention (free text, applied by new-resource-list)

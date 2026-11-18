@@ -1,127 +1,30 @@
 ---
 name: new-resource-list
-description: Use when the user wants to scaffold a new PUBLIC GitHub resource list (Awesome-style index of third-party repos). Triggers — "create a resource list for X", "new awesome list", "let's build a list of Y tools/repos". Produces the canonical README shape (alphabetical sections, project/description/stars table, scope block, CC0). Public repo on GitHub. For private lists use `new-private-resource-list`.
+description: Scaffold a new resource list (Awesome-style index of GitHub repos, Hugging Face models/datasets/Spaces, and web links) as a GitHub repo, public or private, with README, optional SCOPE.md, optional parent hub and index-of-indexes registration. Triggers: "create a resource list for X", "new index of Y", "new awesome list", "new private list".
 ---
 
-# New Resource List (Public)
+# New Resource List
 
-Scaffold a new public GitHub resource list following Daniel's standard shape.
+Read `${CLAUDE_PLUGIN_ROOT}/reference/entries.md` first and follow it (profile, URL classes, metadata, formats, ordering).
 
-## Inputs to gather (silently infer where possible)
-
-1. **Topic / scope** — what the list catalogues (e.g. "AI evaluation tools", "Israeli civic-tech repos").
-2. **Repo name** — Train-Case, prefixed `Awesome-` if it fits the genre. Examples: `Awesome-AI-Evaluations-Tools`, `LLM-Memory-Layers-Index`. Confirm with the user only if ambiguous.
-3. **Initial entries** — URLs the user dropped. May be zero (scope-only scaffold).
-4. **Section scheme** — either user-provided or AI-proposed from the entries. If proposing, list the sections back to the user before writing.
-
-## Standard shape (the default)
-
-Everything below is the default — only deviate if the user explicitly asks.
-
-- Filename: `README.md` at repo root.
-- Awesome badge at the top.
-- Short scope block: **In Scope** / **Out Of Scope** bullets.
-- **Sources Used** block when the user supplied GitHub topic URLs or other discovery sources. Placement: **1–3 sources** render inline near the top, immediately under the scope block. **4+ sources** render in a `## Sources Used` section at the bottom (just above List Authorship) so they don't crowd out the recommendations.
-- **Contents** TOC linking to each section.
-- **Sections in alphabetical order.** Within each section, **rows alphabetical by display name.**
-- Each section is a 4-column table — **Stars and Last Updated are mandatory**, never dropped:
-
-  ```markdown
-  | Project | Description | Stars | Last Updated |
-  |---|---|---|---|
-  | [Display Name](https://github.com/OWNER/REPO) | One-sentence description (≤22 words). | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) | ![](https://img.shields.io/github/last-commit/OWNER/REPO) |
-  ```
-
-- Display name = human-readable (`DeepEval`, not `deepeval`). Description from `gh repo view OWNER/REPO --json description -q .description`, trimmed to ≤22 words. No marketing tone.
-- Footer: **List Authorship** with author block + **CC0** license badge.
+## Inputs (infer silently where possible)
+1. Topic and scope. 2. Repo name per the profile `naming` convention (add `Awesome-` only if it fits). 3. Initial entries (may be zero). 4. Sections: user-given, or propose from entries and proceed. 5. Visibility: from the request ("private"), else `default_visibility`. 6. Format: request, else `formats.third_party` / `formats.own_repos`. 7. Optional parent hub: a name from `hubs` in the profile, or a given repo.
 
 ## Procedure
-
-1. **Resolve repo path.** Default to `~/repos/github/my-repos/<RepoName>` (Daniel's convention). Honour `RESOURCE_LIST_PUBLIC_BASE` env var if set.
-2. **Resolve template.** If `RESOURCE_LIST_TEMPLATE_PATH` is set and points to a readable file, use it as the base instead of the built-in template below; still apply alphabetical ordering.
-3. **Fetch metadata** for every supplied URL in parallel: `gh repo view OWNER/REPO --json description,stargazerCount,pushedAt` (Bash, batched). Skip dead/missing repos and report them. (Stars and last-updated are mandatory columns; both badges render off `OWNER/REPO`, so the live values come from shields.io — but capture `pushedAt` and `stargazerCount` for the release-resource-list CSV export.)
-4. **Categorise.** If the user gave sections, use them verbatim. Otherwise propose a section list (alphabetical) covering the entries, and confirm with the user only if the entries span clearly different sub-domains. If the user dropped a flat list and asked for help organising, do the categorisation work — that is the value-add of this skill.
-5. **Write README.md** using the shape above. Alphabetise sections. Alphabetise rows within each section.
-6. **Initial commit + create GitHub repo.**
-   - `git init` if not already.
-   - `git add -A && git commit -m "Initial commit: <topic> resource list"`
-   - `gh repo create danielrosehill/<RepoName> --public --source=. --description "<one-line>" --push`
-   - **Creating a public repo requires explicit user authorisation** — confirm before running `gh repo create --public`.
-7. **Optional index registration.** If `RESOURCE_LIST_PUBLIC_INDEX` is set (e.g. `Resources-Lists-Index`), offer to add a pointer there using its existing format. Do not auto-edit without confirmation.
-8. **Report.** Repo URL, entry count, sections used, anything skipped.
-
-## Built-in README template
-
-```markdown
-# <Title> [![Awesome](https://awesome.re/badge.svg)](https://awesome.re)
-
-[![View on GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?logo=github&logoColor=white)](https://github.com/danielrosehill/<RepoName>)
-
-<One-paragraph description of the list and its scope.>
-
-## Scope
-
-### In Scope
-- ...
-
-### Out Of Scope
-- ...
-
-{If 1–3 GitHub topic URLs / discovery sources were supplied, render here as a single line:
-**Sources Used:** [topic-slug](https://github.com/topics/topic-slug) · [topic-slug](https://github.com/topics/topic-slug)
-If 4+ sources, omit here and render the `## Sources Used` section near the bottom instead (template at end of this file).}
-
----
-
-## Contents
-
-- [<Section A>](#section-a)
-- [<Section B>](#section-b)
-
----
-
-## <Section A>
-
-| Project | Description | Stars | Last Updated |
-|---|---|---|---|
-| [Project Name](https://github.com/OWNER/REPO) | Description ≤22 words. | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) | ![](https://img.shields.io/github/last-commit/OWNER/REPO) |
-
-## <Section B>
-
-| Project | Description | Stars | Last Updated |
-|---|---|---|---|
-
----
-
-{If 4+ GitHub topic URLs were supplied as sources, render the section below; otherwise omit.}
-
-## Sources Used
-
-This list was assembled by surveying the following GitHub topic pages and awesome lists:
-
-- [<topic-slug>](https://github.com/topics/<topic-slug>)
-- ...
-
----
-
-# List Authorship
-
-## List Author
-
-Curated by [Daniel Rosehill](https://danielrosehill.com).
-
-Contributions, corrections, and PRs welcome.
-
-## License
-
-[![CC0](https://licensebuttons.net/p/zero/1.0/88x31.png)](https://creativecommons.org/publicdomain/zero/1.0/)
-
-To the extent possible under law, the author has dedicated all copyright and related and neighboring rights to this list to the public domain worldwide under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Linked projects retain their own licenses.
-```
+1. **Profile and paths.** Resolve the profile. Local dir = `base_dir/<RepoName>` (`private_base_dir` for private lists if set; the user may name another dir). Stop if it already exists.
+2. **Metadata** for all entries in parallel (GitHub via `gh`, HF via `curl`). Skip and report dead ones.
+3. **Categorise** into alphabetical sections; write a one or two sentence description per section when `section_descriptions` is true.
+4. **Write README.md** from `paths.sh template README.md`: `top_badge` line (if set) above the title; description; "Part of" back-links (below); scope line linking SCOPE.md when `scope_file`; sections via `section.md` and the entry templates; Sources Used (1-3 inline under the scope line, 4+ as a section near the bottom); Contributing block with `contribution_line` and the licence badge. For a private list, skip the Contributing block and licence footer when `private_footer` is false; keep them if `private_footer: true`. Author name/url appear in Contributing only if set.
+5. **SCOPE.md** (when `scope_file: true`, the default) from `paths.sh template SCOPE.md`: In scope, Out of scope, inclusion test; write real content from the topic. Include a "Part of" line if there is a parent.
+6. **Back-links.** Collect lines to put near the top of README and SCOPE.md:
+   - `index_of_indexes.repo` set and `register: true`: the `back_link_line`.
+   - Parent hub: `Part of the [<Hub>](https://github.com/<hub repo>) index.`
+7. **Create and push.** `git init`, commit `Initial commit: <topic> resource list`, `gh repo create <github_owner>/<RepoName> --public|--private --source=. --description "<one line>" --push`. No confirmation step for public repos: visibility comes from the profile or the request.
+8. **Register in the index of indexes** (if configured and `register: true`): in its local clone (pull first; if absent, `gh repo clone`), add an entry in its `entry_format` (template `entry-cards-index-of-indexes.md` for cards), keeping alphabetical order, commit, push. Skip private lists unless the user asks.
+9. **Register in the parent hub** (if given): in the hub's local clone, add a row/card under its configured `section` using `row_format`, in the existing order; commit, push. Then best effort: for each sibling the hub lists whose README has a "Part of" line, add a one-line cross-link to the new list, commit and push each. Report every file changed; skip siblings that fail.
+10. **Report**: repo URL, entry count, sections, back-links added, hub/index commits, skipped items.
 
 ## Edge cases
-
-- **No entries supplied** — write a scope-only scaffold with empty section tables. Still create the repo.
-- **Mixed Git hosts** — only GitHub repos get the star badge. For GitLab/Codeberg/etc., omit the badge cell or render `—`.
-- **Org URLs** — list each notable repo separately rather than the org root.
-- **Existing repo at the target path** — stop and report; do not overwrite.
+- No entries: scope-only scaffold, empty sections omitted.
+- Org URLs: list notable repos separately.
+- Web/paper links: no badge.

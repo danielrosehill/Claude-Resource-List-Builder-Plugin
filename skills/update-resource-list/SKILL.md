@@ -1,46 +1,19 @@
 ---
 name: update-resource-list
-description: Use when the user drops one or more GitHub URLs into an existing resource list and wants them categorised, deduped, and added in the standard table format. Triggers — "add these to <list>", "update the <topic> list with…", "fold these repos into the eval list". The AI does the categorisation work — that is the value-add. Works on any list scaffolded by `new-resource-list` / `new-private-resource-list` (or any list using the same Project|Description|Stars table shape).
+description: Add GitHub repos, Hugging Face models/datasets/Spaces or web links to an existing resource list, categorised, deduped and alphabetised in the list's own format (table or cards). Triggers: "add these to <list>", "update the <topic> list with...", "fold these into the list".
 ---
 
 # Update Resource List
 
-Add new entries to an existing resource list with AI-driven categorisation.
+Read `${CLAUDE_PLUGIN_ROOT}/reference/entries.md` first (profile, URL classes, metadata, formats).
 
-## Procedure
+1. **Resolve the list** (named repo, or inferred; search `base_dir` / `private_base_dir` from the profile). Pull first.
+2. **Read the README**: section scheme, format (table or cards), existing entries for dedup.
+3. **Per URL, in parallel:** classify (github / hf model, dataset, space / web). Skip duplicates (same id anywhere in the README) and report them. Fetch metadata; flag dead/gated ones and skip.
+4. **Categorise** into existing sections by topics/tags/pipeline_tag and description; respect user-supplied labels. Propose before creating a new section (write its description if `section_descriptions`). If a batch would add more than 2 new sections, ask.
+5. **Insert** in the list's format, alphabetical within the section: tables use the matching header (GitHub vs Model/Dataset/Space columns; add a separate table under the section if the other source type has no table yet); cards use the card templates. Honour `show_stars` / `show_last_updated` as the list does; if the list is on the legacy 3-column shape and the profile wants Last Updated, upgrade the whole table and say so.
+6. Update the Contents TOC if sections changed; add a description to any section lacking one when `section_descriptions` is true.
+7. **Commit and push**: `Add: <short list>`; stage only the README (and SCOPE.md if touched).
+8. **Report**: entry -> section, duplicates, dead URLs, push result.
 
-1. **Resolve the target list.** Either the user names the repo, or infer from the conversation. Confirm path. Default search root: `~/repos/github/my-repos/`.
-2. **Read the current README** to learn the section scheme, table format, and existing entries (for dedup).
-3. **For each new URL** (in parallel via Bash):
-   - Skip if `OWNER/REPO` already appears anywhere in the README — note it as a duplicate.
-   - `gh repo view OWNER/REPO --json description,stargazerCount,pushedAt,topics -q '{d:.description,s:.stargazerCount,p:.pushedAt,t:.topics}'`
-   - If the repo is dead/missing, flag it and skip.
-4. **Categorise** each entry into one of the existing sections.
-   - Use repo topics + description to pick the best fit.
-   - If an entry doesn't fit any existing section, propose either (a) placing it in the closest section, or (b) creating a new section. Show the user the proposal before adding a brand-new section.
-   - This is the value-add: when the user dumps a flat list, do the sifting work.
-5. **Insert rows** in the correct table, preserving alphabetical order by display name within the section. Use the standard 4-column row format (Stars and Last Updated are mandatory):
-
-   ```markdown
-   | [Display Name](https://github.com/OWNER/REPO) | One-sentence description (≤22 words). | ![](https://img.shields.io/github/stars/OWNER/REPO?style=social) | ![](https://img.shields.io/github/last-commit/OWNER/REPO) |
-   ```
-
-   Display name = human-readable, not the raw repo slug. Description trimmed to ≤22 words.
-
-   If the existing list is still on the legacy 3-column shape (no Last Updated column), upgrade the whole table in this same edit — add the column header, separator, and a last-commit badge for every existing row. Mention the upgrade in the report.
-6. **Update the Contents TOC** if any new section was added (re-alphabetise it).
-7. **Commit and push.**
-   - `git add -A && git commit -m "Add: <comma-separated short list>"`
-   - `git push`
-8. **Report.** Per-entry: name → section. Duplicates skipped. Dead URLs. Push confirmation.
-
-## When the user provides their own categorisation
-
-If the user pre-labels entries (`X goes under Y`), respect that without re-classifying. Still fetch metadata, dedupe, alphabetise the row insert, and use the standard format.
-
-## Edge cases
-
-- **Entry belongs in two sections** — pick the most specific one. Mention the alternative in the report.
-- **Section explosion** — if you'd add >2 new sections from one batch, stop and ask the user whether to expand the section scheme or fit entries into existing buckets.
-- **Description has a ≤22-word hard limit** — truncate at a sentence boundary and end with a period; do not append "...".
-- **Non-GitHub entries** — render the Stars and Last Updated cells as `—`.
+Edge cases: an entry in two sections goes in the most specific (mention the alternative); descriptions truncate at a sentence boundary, never "...".

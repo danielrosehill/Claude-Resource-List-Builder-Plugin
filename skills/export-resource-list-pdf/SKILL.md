@@ -1,25 +1,12 @@
 ---
 name: export-resource-list-pdf
-description: Use when the user wants to render an existing resource list to a PDF for sharing/archiving. Triggers — "export the <topic> list as PDF", "PDF of this resource list", "make a printable version of the eval list".
+description: Render a resource list README to PDF for sharing or archiving, with badges stripped. Triggers: "export the <topic> list as PDF", "printable version of this list".
 ---
 
 # Export Resource List to PDF
 
-Render the README of a resource list into a PDF using Typst (Daniel's preferred tooling).
-
-## Procedure
-
-1. **Resolve the source.** Default to the README of the list repo passed by the user.
-2. **Strip dynamic shields.io badges** from the markdown copy used for rendering — they don't paginate well in print and the star counts are stale by the time the PDF is opened. Keep the bracketed link to the repo.
-3. **Convert to Typst input** via the workspace's standard pipeline:
-   - If the `typst` skill is available, hand off to it with a `resource-list` template.
-   - Otherwise, render via `pandoc <input>.md -o <output>.pdf --pdf-engine=typst` (preferred) or `--pdf-engine=tectonic` as fallback.
-4. **Write the PDF** to `outputs/<list-name>-<YYYY-MM-DD>.pdf` inside the list repo (create `outputs/` if missing). Or honour an explicit path from the user.
-5. **Optionally upload** to Google Drive via the `save-to-gdrive` skill if the user asks.
-6. **Report** the output path and page count.
-
-## Notes
-
-- This is an export, not a snapshot of live data. Mention in the PDF footer: "Snapshot taken YYYY-MM-DD — star counts and project status may have changed since."
-- For very long lists (>200 entries), enable a 2-column layout in the Typst template to keep page count reasonable.
-- Don't commit the PDF unless the user asks — these are typically ephemeral.
+1. Resolve the profile (`"${CLAUDE_PLUGIN_ROOT}/scripts/paths.sh" profile`) for the base dir and any export preferences; the source is the README of the named list.
+2. Make a temp copy of the markdown with shields.io badge images removed (they paginate badly and live counts are stale in print). For cards, keep the heading, description and a plain link in place of the badge line; for tables, drop the badge cells or columns but keep the linked name.
+3. Render: use a Typst-capable skill if one is available (a template from the overlay `templates/` wins), else `pandoc in.md -o out.pdf --pdf-engine=typst`, fallback `--pdf-engine=tectonic`. Use 2 columns above ~200 entries.
+4. Footer: "Snapshot taken YYYY-MM-DD; project status may have changed since."
+5. Write to `outputs/<list>-<YYYY-MM-DD>.pdf` in the list repo (or the given path). Do not commit unless asked. Report path and page count.
