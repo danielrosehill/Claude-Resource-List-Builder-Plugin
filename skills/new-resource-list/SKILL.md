@@ -21,7 +21,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/reference/entries.md` first and follow it (profile, 
    - Parent hub: `Part of the [<Hub>](https://github.com/<hub repo>) index.`
 7. **Create and push.** `git init`, commit `Initial commit: <topic> resource list`, `gh repo create <github_owner>/<RepoName> --public|--private --source=. --description "<one line>" --push`. No confirmation step for public repos: visibility comes from the profile or the request.
 8. **Register in the index of indexes** (if configured and `register: true`): in its local clone (pull first; if absent, `gh repo clone`), add an entry in its `entry_format` (template `entry-cards-index-of-indexes.md` for cards), keeping alphabetical order, commit, push. Skip private lists unless the user asks.
-9. **Register in the parent hub** (if given): in the hub's local clone, add a row/card under its configured `section` using `row_format`, in the existing order; commit, push. Then best effort: for each sibling the hub lists whose README has a "Part of" line, add a one-line cross-link to the new list, commit and push each. Report every file changed; skip siblings that fail.
+9. **Register in the parent hub** (if given): in the hub's local clone, add an entry under its configured `section`: a card from the entry template when the hub sets `entry_format: cards`, else a row from `row_format`; keep alphabetical order; commit, push. Then best effort: for each sibling the hub lists whose README has a "Part of" line, add a one-line cross-link to the new list, commit and push each. Report every file changed; skip siblings that fail.
 10. **Report**: repo URL, entry count, sections, back-links added, hub/index commits, skipped items.
 
 ## Edge cases

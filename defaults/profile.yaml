@@ -32,5 +32,6 @@ hubs: []                    # optional parent hubs a new list can belong to
   #   local_path: "~/lists/Example-Hub"
   #   repo: "OWNER/Example-Hub"
   #   section: "Sub-indexes"          # heading holding the sub-index table
-  #   row_format: "| [{name}]({url}) | {summary} |"   # how a row is added
+  #   entry_format: cards           # optional: hub lists entries as cards (uses entry templates)
+  #   row_format: "| [{name}]({url}) | {summary} |"   # otherwise, how a table row is added
 naming: "Title-Case words joined by hyphens"  # repo naming convention (free text, applied by new-resource-list)
